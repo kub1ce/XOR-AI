@@ -3,3 +3,5 @@
 *.db
 *.log
 config.py
+image.png
+*.json

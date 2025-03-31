@@ -7,6 +7,8 @@ from aiogram.enums import ParseMode
 
 class Secrets(BaseSettings):  
     token: str
+    jsonId: str
+    folderId: str
 
     class Config:  
         env_file = ".env"  

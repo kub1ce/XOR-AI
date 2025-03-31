@@ -1,8 +1,8 @@
-import asyncio  
+import asyncio
 
-from aiogram import Dispatcher  
-from aiogram.methods import DeleteWebhook  
- 
+from aiogram import Dispatcher
+from aiogram.methods import DeleteWebhook
+
 from app.settings import bot
 from app.handlers import event_handler
 
