@@ -2,6 +2,7 @@ from aiogram.types import Message
 
 from app.settings import bot
 from app.handlers.GoogleOCR import drive_ocr
+from app.handlers.text_improver import textImprover
 
 
 async def message(msg: Message):
@@ -13,6 +14,8 @@ async def message(msg: Message):
         file = await bot.get_file(file_id)
         file_bytes = await bot.download_file(file.file_path)
 
+        todel = await msg.reply("Принято в работу!")
+
         # Конвертация в b64
         # image = Image.open(BytesIO(downloaded_file.getvalue()))
         # buffered = BytesIO()
@@ -20,6 +23,9 @@ async def message(msg: Message):
         # img_str = base64.b64encode(buffered.getvalue()).decode()
         
         text = await drive_ocr.process_image(file_bytes)
+
+        text = textImprover.improve_text(text)
         
         await msg.reply(text)
+        await todel.delete()
         
