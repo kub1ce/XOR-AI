@@ -6,6 +6,10 @@ from aiogram.methods import DeleteWebhook
 from app.settings import bot
 from app.handlers import event_handler
 
+import logging
+
+
+logging.basicConfig(filename="log.log", level=logging.INFO, encoding="utf-8")
 
 async def start():  
     dp = Dispatcher()
@@ -22,4 +26,5 @@ async def start():
 
 if __name__ == "__main__":  
     print(">>> Bot started")
+    
     asyncio.run(start())
