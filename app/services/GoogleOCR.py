@@ -4,6 +4,8 @@ from google.oauth2 import service_account
 from googleapiclient.http import MediaIoBaseUpload
 from app.settings import secrets
 
+from random import randint
+
 SERVICE_ACCOUNT_FILE = f'{secrets.jsonId}.json'
 
 class DriveOCR:
@@ -17,13 +19,13 @@ class DriveOCR:
     async def process_image(self, file_bytes: bytes) -> str:
         
         file_metadata = {
-            'name': 'OCR_TEMP_FILE',
+            'name': f'OCR_TEMP_FILE_{randint(0, 10000000)}',
             'mimeType': 'application/vnd.google-apps.document',
             'parents': [secrets.folderId]
         }
         media = MediaIoBaseUpload(
-            file_bytes,
-            mimetype='image/jpeg'
+            io.BytesIO(file_bytes),
+            mimetype='image/jpeg',
         )
         
         file = self.drive_service.files().create(

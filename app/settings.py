@@ -17,4 +17,7 @@ class Secrets(BaseSettings):
 
 secrets = Secrets()
 
-bot = Bot(token=secrets.token, default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN))
+bot = Bot(
+    token=secrets.token, 
+    # default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN_V2)
+)

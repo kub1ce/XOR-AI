@@ -32,7 +32,6 @@ class TextImprover:
         }
 
         response = requests.post(url, json=data, headers=headers)
-        print(response.text)
 
         try:
             return response.json()["choices"][0]["message"]['content'].split("</think>\n\n")[1]
