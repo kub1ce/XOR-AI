@@ -61,7 +61,7 @@ async def process_confirm_check(callback: CallbackQuery):
     except Exception as e:
         logging.error()
 
-    text=""
+    text="Не удалось распознать текст("
     
     try:
         text = await drive_ocr.process_image(data["photo_bytes"])
@@ -79,5 +79,8 @@ async def process_confirm_check(callback: CallbackQuery):
             logging.error(e)
         text = qwenOCR.process_image(data["photo_bytes"], text)
     
+
     await data["msg"].reply(text)
     await callback.message.delete()
+    
+    del user_data[user_id]
