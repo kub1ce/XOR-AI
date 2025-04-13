@@ -19,14 +19,16 @@ class GoogleDriveService:
         )
         self.drive_service = build('drive', 'v3', credentials=self.credentials)
     
-    def uploadFile(self, file_bytes: bytes) -> str:
+    def uploadFile(self, file_bytes: bytes, extre:bool = False) -> str:
         """Uploads file to google drive and returns file id"""
 
         file_metadata = {
             'name': f'OCR_TEMP_FILE_{int(datetime.now().timestamp())}.jpg',
-            'mimeType': 'application/vnd.google-apps.document',
             'parents': [secrets.folderId]
         }
+
+        if extre: file_metadata['mimeType'] =  'application/vnd.google-apps.document'
+
         media = MediaIoBaseUpload(
             io.BytesIO(file_bytes),
             mimetype='image/jpeg',
@@ -42,7 +44,7 @@ class GoogleDriveService:
 
         self.drive_service.permissions().create(
             fileId=fileID,
-            body={'type': 'anyone', 'role': 'writer'}
+            body={'type': 'anyone', 'role': 'reader'}
         ).execute()
 
         return fileID
@@ -54,7 +56,7 @@ class GoogleDriveService:
     async def imageToTextExtractor(self, file_bytes: bytes) -> str:
         """Extracts text from image"""
         
-        doc_id = self.uploadFile(file_bytes)
+        doc_id = self.uploadFile(file_bytes, extre=True)
 
         result = self.drive_service.files().export(
             fileId=doc_id,
@@ -65,4 +67,4 @@ class GoogleDriveService:
         
         return result.decode('utf-8')
 
-drive_ocr = GoogleDriveService()
+googleDriveService = GoogleDriveService()

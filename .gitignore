@@ -5,8 +5,6 @@ __pycache__/
 /venv/
 *.db
 *.log
-config.py
 image.png
 ememge.jpg
 *.json
-app/services/UNWORKING.py

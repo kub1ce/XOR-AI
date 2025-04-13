@@ -2,16 +2,24 @@ import requests
 import logging
 
 from app.settings import secrets
-from app.services.GoogleDriveService import drive_ocr
+from app.services.GoogleDriveService import googleDriveService
 
-SERVICE_ACCOUNT_FILE = f'{secrets.jsonId}.json'
+from app.utils.errorHandler import api_error_handler
+from app.utils.APIValidators import validateResponse
 
 class QwenOCR:
-    def __init__(self):
-        self.api_key = secrets.gptKey
-        self.url = "https://api.intelligence.io.solutions/api/v1/chat/completions"
+   def __init__(self):
+      self.api_key = secrets.gptKey
+      self.url = "https://api.intelligence.io.solutions/api/v1/chat/completions"
+      self.headers = {
+         "Authorization": f"Bearer {self.api_key}",
+         "Content-Type": "application/json",
+      }
+      self.model = "Qwen/Qwen2-VL-7B-Instruct"
+      # self.model = "deepseek-ai/DeepSeek-R1"
+      self.temperature = 0.1
 
-        self.system_prompt = """Вы — профессиональный OCR-корректор с расширенными возможностями анализа изображений. Ваша задача — восстановить текст ИДЕНТИЧНО изображению, соблюдая правила:
+      self.systemPrompt = """Вы — профессиональный OCR-корректор с расширенными возможностями анализа изображений. Ваша задача — восстановить текст ИДЕНТИЧНО изображению, соблюдая правила:
 
 ▲ Основные правила:
 1. **Приоритет изображения**: 
@@ -195,49 +203,47 @@ det(A) = │ a  b │
 ▲ Формат ответа:
 ТОЛЬКО текст, 1:1 с изображением. Никаких пояснений!"""
 
-    def process_image(self, bytesimage:bytes, text:str=""):
+   @api_error_handler(logger_name="Qwen-OCR")
+   async def process_image(self, bytesimage:bytes, text:str=""):
 
-        fileId = drive_ocr.uploadFile(bytesimage)
+      fileId = googleDriveService.uploadFile(bytesimage)
 
-        fileLink = f"https://drive.google.com/uc?export=view&id={fileId}"
+      fileLink = f"https://drive.google.com/uc?export=view&id={fileId}"
 
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
+      resp = requests.post(
+         self.url, 
+         headers=self.headers, 
+         json=self._build_payload(text, fileLink)
+      )
 
-        data = {
-            "model": "Qwen/Qwen2-VL-7B-Instruct",
-            "messages": [
-                {
-                    "role": "system",
-                    "content": self.system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": text},
-                        {"type": "image_url", "image_url": {"url": fileLink}}
-                    ]
-                },
-            ],
-            "temperature": 0.2
-        }
+      googleDriveService.deleteFile(fileId)
 
+      if resp.status_code != 200:
+         from pprint import pprint
+         pprint(resp.__dict__)
+         logging.error("500")
+         return "500"
+      else:
+         return validateResponse(resp.json())
+   
+   def _build_payload(self, text: str, fileLink: str = None) -> dict:
+      return {
+         "model": self.model,
+         "messages": [
+               {
+                  "role": "system",
+                  "content": self.systemPrompt
+               },
+               {
+               "role": "user",
+               "content": [
+                     {"type": "text", "text": text},
+                     {"type": "image_url", "image_url": {"url": fileLink}}
+               ]
+               }
+         ],
+         "temperature": self.temperature
+      }
 
-        response = requests.post(self.url, json=data, headers=headers, timeout=1000)
-
-        drive_ocr.deleteFile(fileId)
-
-        try:
-            return response.json()["choices"][0]["message"]['content']
-        except Exception as e:
-            logging.error(e)
-            try:
-                logging.warning(response.__dict__)
-            except:
-                logging.warning("Не привести ответ в формат JSON")
-
-            return "Произошла ошибка"
 
 qwenOCR = QwenOCR()

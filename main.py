@@ -6,12 +6,10 @@
 
 import asyncio
 import logging
+import logging.config
 
-from aiogram import Dispatcher, types
+from aiogram import Dispatcher
 from aiogram.methods import DeleteWebhook
-
-from aiogram.filters import Command
-
 
 from app.settings import bot
 from app.handlers import routers
@@ -20,7 +18,9 @@ from app.handlers import routers
 logging.basicConfig(
     level=logging.INFO,
     filename="log.log",
-    encoding="utf-8"
+    encoding="utf-8",
+    format="%(levelname)s - %(asctime)s - %(name)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
 )
 
 dp = Dispatcher()
