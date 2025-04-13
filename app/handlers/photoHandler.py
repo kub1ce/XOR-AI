@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 
 from app.settings import bot
-from app.services.GoogleOCR import drive_ocr
+from app.services.GoogleDriveService import drive_ocr
 from app.services.QwenOCR import qwenOCR
 
 import logging
@@ -64,7 +64,7 @@ async def process_confirm_check(callback: CallbackQuery):
     text="Не удалось распознать текст("
     
     try:
-        text = await drive_ocr.process_image(data["photo_bytes"])
+        text = await drive_ocr.imageToTextExtractor(data["photo_bytes"])
     except Exception as e:
         logging.error(e)
 

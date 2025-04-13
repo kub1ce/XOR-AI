@@ -1,47 +1,68 @@
-import io
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from googleapiclient.http import MediaIoBaseUpload
+
+import io
+from datetime import datetime
+
 from app.settings import secrets
 
-from random import randint
 
-SERVICE_ACCOUNT_FILE = f'{secrets.jsonId}.json'
+class GoogleDriveService:
+    """Google Drive service"""
 
-class DriveOCR:
     def __init__(self):
+        self.SERVICE_ACCOUNT_FILE = f'{secrets.jsonId}.json'
         self.credentials = service_account.Credentials.from_service_account_file(
-            SERVICE_ACCOUNT_FILE,
+            self.SERVICE_ACCOUNT_FILE,
             scopes=['https://www.googleapis.com/auth/drive']
         )
         self.drive_service = build('drive', 'v3', credentials=self.credentials)
+    
+    def uploadFile(self, file_bytes: bytes) -> str:
+        """Uploads file to google drive and returns file id"""
 
-    async def process_image(self, file_bytes: bytes) -> str:
-        
         file_metadata = {
-            'name': f'OCR_TEMP_FILE_{randint(0, 10000000)}',
+            'name': f'OCR_TEMP_FILE_{int(datetime.now().timestamp())}.jpg',
             'mimeType': 'application/vnd.google-apps.document',
             'parents': [secrets.folderId]
         }
         media = MediaIoBaseUpload(
             io.BytesIO(file_bytes),
             mimetype='image/jpeg',
+            resumable=True
         )
-        
         file = self.drive_service.files().create(
             body=file_metadata,
             media_body=media,
             fields='id'
         ).execute()
         
-        doc_id = file.get('id')
+        fileID = file.get('id')
+
+        self.drive_service.permissions().create(
+            fileId=fileID,
+            body={'type': 'anyone', 'role': 'writer'}
+        ).execute()
+
+        return fileID
+    
+    def deleteFile(self, file_id: str) -> None:
+        """Deletes file from google drive"""
+        self.drive_service.files().delete(fileId=file_id).execute()
+
+    async def imageToTextExtractor(self, file_bytes: bytes) -> str:
+        """Extracts text from image"""
+        
+        doc_id = self.uploadFile(file_bytes)
+
         result = self.drive_service.files().export(
             fileId=doc_id,
             mimeType='text/plain'
         ).execute()
         
-        self.drive_service.files().delete(fileId=doc_id).execute()
+        self.deleteFile(doc_id)
         
         return result.decode('utf-8')
 
-drive_ocr = DriveOCR()
+drive_ocr = GoogleDriveService()

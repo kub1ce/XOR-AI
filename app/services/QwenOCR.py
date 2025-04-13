@@ -1,12 +1,8 @@
 import requests
-import logging, io
-from random import randint
-
-from googleapiclient.discovery import build
-from google.oauth2 import service_account
-from googleapiclient.http import MediaIoBaseUpload
+import logging
 
 from app.settings import secrets
+from app.services.GoogleDriveService import drive_ocr
 
 SERVICE_ACCOUNT_FILE = f'{secrets.jsonId}.json'
 
@@ -14,12 +10,6 @@ class QwenOCR:
     def __init__(self):
         self.api_key = secrets.gptKey
         self.url = "https://api.intelligence.io.solutions/api/v1/chat/completions"
-
-        self.credentials = service_account.Credentials.from_service_account_file(
-            SERVICE_ACCOUNT_FILE,
-            scopes=['https://www.googleapis.com/auth/drive']
-        )
-        self.drive_service = build('drive', 'v3', credentials=self.credentials)
 
         self.system_prompt = """Вы — профессиональный OCR-корректор с расширенными возможностями анализа изображений. Ваша задача — восстановить текст ИДЕНТИЧНО изображению, соблюдая правила:
 
@@ -152,7 +142,7 @@ class QwenOCR:
    │ 1  0 │
    │ 0  1 │
 
-   Ошибка OCR: "A = \begin{matrix} a & b \\ c & d \end{matrix}"
+   Ошибка OCR: "A = a b  c d"
    Изображение: прямоугольная структура →
    Исправлено: 
    A = │ a  b │
@@ -168,7 +158,7 @@ class QwenOCR:
    × Применять LaTeX-синтаксис (\begin{matrix}, &, \\)
    × Искажать структуру (сохраняйте пробелы как в оригинале)
    × Заменять символы без визуального подтверждения
-   × Использовать LaTeX (\frac, \sum)
+   × Использовать LaTeX (\frac, sum)
    × Смешивать стили: "x² + y_2 → x² + y₂" (корректно)
    × Менять порядок слов/формул без подтверждения изображением.
    × Исправлять опечатки, если они есть на картинке.
@@ -196,23 +186,7 @@ class QwenOCR:
 │ x  y │
 │ z  w │
 
-Оригинальный текст (Ошибка OCR):  
-"- 
--2  
--3  
--2  
--  
--3 = 0;  
-2 2  
-5 - 21"  
-
-Изображение: матрица 3x3 с границами →  
-Исправлено:  
-│-λ   -2    -3 │  
-│-2   -λ    -3 │ = 0;  
-│ 2    2   5-λ │  
-
-Оригинальный текст: "det(A) = \begin{vmatrix} a&b \\ c&d \end{vmatrix}"
+Оригинальный текст: "det(A) = \begin{vmatrix} a&b \\ c&d end{vmatrix}"
 Изображение: классическая матрица с линиями →
 Исправлено: 
 det(A) = │ a  b │
@@ -221,35 +195,11 @@ det(A) = │ a  b │
 ▲ Формат ответа:
 ТОЛЬКО текст, 1:1 с изображением. Никаких пояснений!"""
 
-    def process_image(self, bytesimage:bytes, text:str="", photoId:str = str(randint(0, 2400))):
+    def process_image(self, bytesimage:bytes, text:str=""):
 
-        # ? Image to GDrive & get link
-        file_metadata = {
-            'name': f'photo_{photoId}.jpg',
-            'parents': [secrets.folderId]
-        }
+        fileId = drive_ocr.uploadFile(bytesimage)
 
-        media = MediaIoBaseUpload(io.BytesIO(bytesimage), 
-                                mimetype='image/jpeg',
-                                resumable=True)
-
-        uploaded_file = self.drive_service.files().create(
-            body=file_metadata,
-            media_body=media,
-            fields='id'
-        ).execute()
-
-        file_id = uploaded_file.get('id')
-
-        # Устанавливаем разрешение на доступ для всех
-        self.drive_service.permissions().create(
-            fileId=file_id,
-            body={'type': 'anyone', 'role': 'reader'}
-        ).execute()
-
-        file_link = f"https://drive.google.com/uc?export=view&id={file_id}"
-
-        # ? ==========
+        fileLink = f"https://drive.google.com/uc?export=view&id={fileId}"
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -267,7 +217,7 @@ det(A) = │ a  b │
                     "role": "user",
                     "content": [
                         {"type": "text", "text": text},
-                        {"type": "image_url", "image_url": {"url": file_link}}
+                        {"type": "image_url", "image_url": {"url": fileLink}}
                     ]
                 },
             ],
@@ -276,7 +226,8 @@ det(A) = │ a  b │
 
 
         response = requests.post(self.url, json=data, headers=headers, timeout=1000)
-        self.drive_service.files().delete(fileId=file_id).execute()
+
+        drive_ocr.deleteFile(fileId)
 
         try:
             return response.json()["choices"][0]["message"]['content']
