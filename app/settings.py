@@ -9,7 +9,7 @@ class Secrets(BaseSettings):
     token: str
     jsonId: str
     folderId: str
-    gptKey: str
+    ioKey: str
 
     class Config:  
         env_file = ".env"  

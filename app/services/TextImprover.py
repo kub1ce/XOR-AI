@@ -7,7 +7,7 @@ from app.utils.APIValidators import validateResponse
 
 class TextImprover:
     def __init__(self):
-        self.api_key = secrets.gptKey
+        self.api_key = secrets.ioKey
         self.url = "https://api.intelligence.io.solutions/api/v1/chat/completions"
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
