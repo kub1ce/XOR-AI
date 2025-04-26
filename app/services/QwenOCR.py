@@ -16,7 +16,6 @@ class QwenOCR:
          "Content-Type": "application/json",
       }
       self.model = "Qwen/Qwen2-VL-7B-Instruct"
-      # self.model = "deepseek-ai/DeepSeek-R1"
       self.temperature = 0.1
 
       self.systemPrompt = """Вы — профессиональный OCR-корректор с расширенными возможностями анализа изображений. Ваша задача — восстановить текст ИДЕНТИЧНО изображению, соблюдая правила:
@@ -201,7 +200,7 @@ det(A) = │ a  b │
          │ c  d │
 
 ▲ Формат ответа:
-ТОЛЬКО текст, 1:1 с изображением. Никаких пояснений!"""
+ТОЛЬКО текст, 1:1 с изображением в формате txt. Никаких пояснений!"""
 
    @api_error_handler(logger_name="Qwen-OCR")
    async def process_image(self, bytesimage:bytes, text:str=""):

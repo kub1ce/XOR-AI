@@ -6,14 +6,12 @@
 
 import asyncio
 import logging
-import logging.config
 
 from aiogram import Dispatcher
 from aiogram.methods import DeleteWebhook
 
 from app.settings import bot
 from app.handlers import routers
-
 
 logging.basicConfig(
     level=logging.INFO,
