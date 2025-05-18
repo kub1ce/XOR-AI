@@ -19,5 +19,5 @@ secrets = Secrets()
 
 bot = Bot(
     token=secrets.token, 
-    # default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN_V2)
+    # default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN)
 )

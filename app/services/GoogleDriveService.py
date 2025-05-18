@@ -65,6 +65,15 @@ class GoogleDriveService:
         
         self.deleteFile(doc_id)
         
-        return result.decode('utf-8')
+        # Clean up the text by removing all leading underscores and whitespace
+        text = result.decode('utf-8-sig')
+        if "\ufeff________________\r\n\r\n" in text:
+            text = text.replace("\ufeff________________\r\n\r\n", "", 1)
+            text = text.strip()
+        # Remove all leading underscores and whitespace characters
+        while text and (text[0] == '_' or text[0].isspace()):
+            text = text[1:]
+        
+        return text
 
 googleDriveService = GoogleDriveService()
