@@ -145,7 +145,8 @@ async def improve_text(callback: CallbackQuery) -> None:
 
         await data["msg"].reply(
             text = f"🔍 Результат обработки:\n" \
-                   f"```XOR-AI\n{text}```",
+                   f"```XOR-AI\n{text}```\n" \
+                   f"Используйте /settings для изменения параметров обработки",
             reply_markup=get_improve_buttons(),
             parse_mode=enums.ParseMode.MARKDOWN
         )
