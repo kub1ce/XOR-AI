@@ -31,7 +31,8 @@ imageRouter = Router(name="Images")
 def get_improve_buttons() -> InlineKeyboardMarkup:
     """Создает клавиатуру кнопками доп. обработки и сохранения"""
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text = "доп. обработку", callback_data="improve_text")],
+        [InlineKeyboardButton(text = "доп. обработка", callback_data="improve_text")],
+        [InlineKeyboardButton(text = "Краткий пересказ", callback_data="summarize_text")],
         [InlineKeyboardButton(text = "сохранить", callback_data="save")],
     ])
 
@@ -58,6 +59,10 @@ async def set_reaction(message: Message, emoji: str) -> None:
         )
     except TelegramAPIError as e:
         logging.error(f"Ошибка при установке реакции: {e}")
+
+def get_text_from_message(message: Message) -> str:
+    """Извлекает текст из сообщения"""
+    return message.md_text.split("```XOR-AI\n")[1].split("```")[0].replace("\\.", ".")
 
 @imageRouter.message(F.photo)
 async def handle_photo(msg: Message) -> None:
@@ -138,7 +143,7 @@ async def improve_text(callback: CallbackQuery) -> None:
             if ai_model == "qwen":
                 text = await qwenOCR.process_image(data["photo_bytes"], text)
             else:
-                text = await textImprover.improveText(text)
+                text = await textImprover.improve_text(text)
 
         if not is_valid_text(text):
             raise ValueError("Не удалось улучшить текст")
@@ -161,7 +166,7 @@ async def save_text(callback: CallbackQuery) -> None:
     user_id = callback.from_user.id
     format_type = settings_manager.get_user_settings(user_id)["output_type"]
     
-    text = callback.message.md_text.split("```XOR-AI\n")[1].split("```")[0].replace("\.", ".")
+    text = get_text_from_message(callback.message)
     
     try:
         success = await convert_and_send_text(bot, user_id, text, format_type)
@@ -175,4 +180,18 @@ async def save_text(callback: CallbackQuery) -> None:
         await callback.message.reply(
             "❌ Произошла ошибка при сохранении документа. Попробуйте еще раз."
         )
+
+@imageRouter.callback_query(F.data == "summarize_text")
+async def summarize_text(callback: CallbackQuery) -> None:
+    """Обработчик краткого пересказа текста"""
+    
+    text = get_text_from_message(callback.message)
+
+    text = await textImprover.summarize_text(text)
+
+    await callback.message.reply(
+        text = f"🔍 Результат краткого пересказа:\n" \
+               f"```XOR-AI\n{text}```",
+        parse_mode = enums.ParseMode.MARKDOWN
+    )
 

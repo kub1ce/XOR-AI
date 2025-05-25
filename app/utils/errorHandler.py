@@ -11,10 +11,10 @@ def api_error_handler(logger_name: str = "API") -> Callable:
             try:
                 return await func(*args)
             except aiohttp.ClientError as e:
-                logging.error(e, name=logger_name)
+                logging.error(f"[{logger_name}] Network error: {str(e)}")
                 return "Network error"
             except Exception as e:
-                logging.error(e, name=logger_name)
+                logging.error(f"[{logger_name}] Internal server error: {str(e)}")
                 return "Internal server error"
         return async_wrapper
     return decorator
