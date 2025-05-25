@@ -28,7 +28,8 @@ class SettingsManager:
             "ai_model": self.settings.get(user_id, {}).get("ai_model", "qwen"),
             "output_type": self.settings.get(user_id, {}).get("output_type", "pdf"),
             "improve_level": self.settings.get(user_id, {}).get("improve_level", 0),
-            "latex_enabled": self.settings.get(user_id, {}).get("latex_enabled", False)
+            "latex_enabled": self.settings.get(user_id, {}).get("latex_enabled", False),
+            "translate_language": self.settings.get(user_id, {}).get("translate_language", "ru")
         }
 
     def update_user_settings(self, user_id: int, setting_type: str, value: str) -> bool:
@@ -43,7 +44,8 @@ class SettingsManager:
                 "ai": "ai_model",
                 "tp": "output_type",
                 "im": "improve_level",
-                "lt": "latex_enabled"
+                "lt": "latex_enabled",
+                "tr": "translate_language"
             }
 
             if setting_type not in key_map:

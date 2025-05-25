@@ -8,7 +8,6 @@ from app.services.QwenOCR import qwenOCR
 from app.services.TextImprover import textImprover
 from app.utils.document_utils import convert_and_send_text
 from app.settings_manager import settings_manager
-
 import logging
 
 ERROR_MESSAGE = \
@@ -32,7 +31,8 @@ def get_improve_buttons() -> InlineKeyboardMarkup:
     """Создает клавиатуру кнопками доп. обработки и сохранения"""
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text = "доп. обработка", callback_data="improve_text")],
-        [InlineKeyboardButton(text = "Краткий пересказ", callback_data="summarize_text")],
+        [InlineKeyboardButton(text = "перевести", callback_data="translate_text")],
+        [InlineKeyboardButton(text = "пересказать", callback_data="summarize_text")],
         [InlineKeyboardButton(text = "сохранить", callback_data="save")],
     ])
 
@@ -192,6 +192,21 @@ async def summarize_text(callback: CallbackQuery) -> None:
     await callback.message.reply(
         text = f"🔍 Результат краткого пересказа:\n" \
                f"```XOR-AI\n{text}```",
-        parse_mode = enums.ParseMode.MARKDOWN
+        parse_mode = enums.ParseMode.MARKDOWN,
+        reply_markup = get_improve_buttons()
     )
 
+@imageRouter.callback_query(F.data == "translate_text")
+async def translate_text(callback: CallbackQuery) -> None:
+    """Обработчик перевода текста"""
+    text = get_text_from_message(callback.message)
+    translate_language = settings_manager.get_user_settings(callback.from_user.id)["translate_language"]
+
+    translated_text = await textImprover.translate_text(text, translate_language)
+
+    await callback.message.reply(
+        text = f"🔍 Результат перевода:\n" \
+               f"```XOR-AI\n{translated_text}```",
+        parse_mode = enums.ParseMode.MARKDOWN,
+        reply_markup = get_improve_buttons()
+    )

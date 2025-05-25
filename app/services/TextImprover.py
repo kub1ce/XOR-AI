@@ -85,6 +85,30 @@ class TextImprover:
                 response_data = await response.json()
                 validated = validateResponse(response_data)
                 return validated.split("</think>")[-1].strip() or "&"
+    
+    @api_error_handler(logger_name="translateText")
+    async def translate_text(self, text: str, target_language: str) -> str:
+        """
+        Translate text to the target language using the DeepSeek API.
+        
+        Args:
+            text: The text to translate
+            target_language: The target language code (e.g., "en", "es", "fr")
+            
+        Returns:
+            str: The translated text
+        """
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                self.url,
+                json=self._build_payload(target_language + "\n" + text, "TRANSLATE_TEXT"),
+                headers=self.headers
+            ) as response:
+                response_data = await response.json()
+                validated = validateResponse(response_data)
+                print(validated)
+                return validated.split("</think>")[-1].strip() or "&"
+        
 
     def _build_payload(self, text: str, prompt_type: str) -> Dict[str, Any]:
         """

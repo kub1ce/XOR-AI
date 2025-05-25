@@ -11,7 +11,8 @@ def get_menu_buttons() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text = "выбор нейросети", callback_data="ai")],
         [InlineKeyboardButton(text = "выбор формата", callback_data="type")],
         [InlineKeyboardButton(text = "доп. обработка", callback_data="improve")],
-        [InlineKeyboardButton(text = "LaTex", callback_data="latex")],
+        [InlineKeyboardButton(text = "язык перевода", callback_data="translate")],
+        # [InlineKeyboardButton(text = "LaTex", callback_data="latex")],
     ])
 
 def get_ai_buttons() -> InlineKeyboardMarkup:
@@ -43,7 +44,12 @@ def get_latex_buttons() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text = "включить", callback_data="lt_yes")],
     ])
 
-# ==========
+def get_translate_buttons() -> InlineKeyboardMarkup:
+    """Создает клавиатуру с кнопками навигации в меню, язык перевода"""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text = "русский (по умолчанию)", callback_data="tr_ru")],
+        [InlineKeyboardButton(text = "english", callback_data="tr_en")],
+    ])
 
 @commandsRouter.message(filters.CommandStart())
 async def greeting(msg: Message):
@@ -121,10 +127,19 @@ async def switch_latex(callvack: CallbackQuery):
     # )
 
 
+@commandsRouter.callback_query(F.data == "translate")
+async def switch_translate(callvack: CallbackQuery):
+    """Изменение языка перевода"""
+    await callvack.message.edit_text(
+        text = "Выберите язык для перевода:",
+        reply_markup = get_translate_buttons()
+    )
+
 @commandsRouter.callback_query(F.data.startswith("ai_"))
 @commandsRouter.callback_query(F.data.startswith("tp_"))
 @commandsRouter.callback_query(F.data.startswith("im_"))
 @commandsRouter.callback_query(F.data.startswith("lt_"))
+@commandsRouter.callback_query(F.data.startswith("tr_"))
 async def switch_settings(callvack: CallbackQuery):
     # Сохраняем настройки пользователя
     _type = callvack.data.split("_")[0]
