@@ -62,7 +62,7 @@ async def set_reaction(message: Message, emoji: str) -> None:
 
 def get_text_from_message(message: Message) -> str:
     """Извлекает текст из сообщения"""
-    return message.md_text.split("```XOR-AI\n")[1].split("```")[0].replace("\\.", ".")
+    return message.html_text.split('<pre><code class="language-XOR-AI">')[1].split('</code></pre>')[0]
 
 @imageRouter.message(F.photo)
 async def handle_photo(msg: Message) -> None:
